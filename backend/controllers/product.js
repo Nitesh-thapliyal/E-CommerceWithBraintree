@@ -62,38 +62,39 @@ exports.createProduct = (req, res) => {
   });
 };
 
-exports.getProduct = (req, res) => {
-  req.product.photo = undefined;
-  return res.json(req.product);
-};
+exports.getProduct = (req, res)=>{
+  req.product.photo = undefined; 
+  return res.json(req.product)
+}
 
-//middleware
-exports.photo = (req, res, next) => {
-  if (req.product.photo.data) {
-    res.set("Content-Type", req.product.photo.contentType);
+//middleware : optimize the image binary code and make process fast
+exports.photo = (req,res,next)=>{
+  //safety net check
+  if(req.product.photo.data){
+    res.set("Content-Type", req.product.photo.contentType)
     return res.send(req.product.photo.data);
   }
   next();
-};
+}
 
-// delete controllers
-exports.deleteProduct = (req, res) => {
+// delete controller
+exports.deleteProduct = (req,res)=>{
   let product = req.product;
-  product.remove((err, deletedProduct) => {
-    if (err) {
+  product.remove((err,deletedProduct)=>{
+    if(err){
       return res.status(400).json({
-        error: "Failed to delete the product"
-      });
+        error: "Failed to delete the product!"
+      })
     }
     res.json({
-      message: "Deletion was a success",
+      message: "Deletion was Sucess!!",
       deletedProduct
-    });
-  });
-};
+    })
+  })  
+}
 
-// delete controllers
-exports.updateProduct = (req, res) => {
+// update controller
+exports.updateProduct = (req,res)=>{
   let form = new formidable.IncomingForm();
   form.keepExtensions = true;
 
@@ -103,10 +104,11 @@ exports.updateProduct = (req, res) => {
         error: "problem with image"
       });
     }
-
+   
     //updation code
     let product = req.product;
-    product = _.extend(product, fields);
+    //lodash: it updates and extends the value
+    product = _.extend(product, fields)
 
     //handle file here
     if (file.photo) {
@@ -118,67 +120,70 @@ exports.updateProduct = (req, res) => {
       product.photo.data = fs.readFileSync(file.photo.path);
       product.photo.contentType = file.photo.type;
     }
-    // console.log(product);
-
     //save to the DB
     product.save((err, product) => {
       if (err) {
         res.status(400).json({
-          error: "Updation of product failed"
+          error: "Updation Failed"
         });
       }
       res.json(product);
     });
   });
-};
+}
 
-//product listing
-
-exports.getAllProducts = (req, res) => {
-  let limit = req.query.limit ? parseInt(req.query.limit) : 8;
-  let sortBy = req.query.sortBy ? req.query.sortBy : "_id";
-
+// product listing
+exports.getAllProducts = (req, res)=>{
+  let limit = req.query.limit ? parseInt(req.query.limit) : 8
+  let sortBy = req.query.sortBy ? req.query.sortBy : "_id"
   Product.find()
-    .select("-photo")
-    .populate("category")
-    .sort([[sortBy, "asc"]])
-    .limit(limit)
-    .exec((err, products) => {
-      if (err) {
-        return res.status(400).json({
-          error: "NO product FOUND"
-        });
-      }
-      res.json(products);
-    });
-};
-
-exports.getAllUniqueCategories = (req, res) => {
-  Product.distinct("category", {}, (err, category) => {
-    if (err) {
+  // "-" negative sign means dont select
+  .select("-photo")
+  .populate("category")
+  .sort([[sortBy, "asc"]])
+  .limit(limit)
+  .exec((err, products)=>{
+    if(err){
       return res.status(400).json({
-        error: "NO category found"
-      });
+        error: "No product found"
+      })
+    }
+    res.json(products);
+  })
+}
+
+
+exports.getAllUniqueCategories = (req, res)=>{
+
+  Product.distinct("category", {}, (err, category)=>{
+    if(err){
+      return res.status(400).json({
+        error: "No category found!"
+      })
     }
     res.json(category);
-  });
-};
+  })
+}
 
-exports.updateStock = (req, res, next) => {
+
+
+// increase the sold and decrease the stock
+exports.updateStock = (req,res, next)=>{
+
   let myOperations = req.body.order.products.map(prod => {
     return {
       updateOne: {
-        filter: { _id: prod._id },
-        update: { $inc: { stock: -prod.count, sold: +prod.count } }
+        filter: {_id: prod._id},
+        update: {$inc: {stock: -prod.count, sold: +prod.count}}
       }
-    };
-  });
+    }
+  })
 
-  Product.bulkWrite(myOperations, {}, (err, products) => {
-    if (err) {
+  Product.bulkWrite(myOperations,{}, (err, products)=>{
+    if(err){
       return res.status(400).json({
-        error: "Bulk operation failed"
-      });
+        error: "Bulk operations failed!"
+      })
     }
     next();
   });
