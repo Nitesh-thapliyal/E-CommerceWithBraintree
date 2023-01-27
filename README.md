@@ -42,7 +42,7 @@ JWT_SECRET=your_secret_key
 **Payment Gateway**
 - Braintree
 
-![braintree](src/braintree.png)
+![Braintree](src/braintree.png)
 
 **Status**
 - Completed
